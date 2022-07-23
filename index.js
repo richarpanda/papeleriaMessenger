@@ -34,21 +34,21 @@ app.post('/webhook', (req, res) => {
             let sender_psid = webhook_event.sender.id;
             
             // Valida que no tenga mensajes existentes, 
-            apiHandler.callAPIGraph(apiHandler.getMessagesByIdRequest(sender_psid))
-               .then(messageValidationResponse => {
-                  let messages = JSON.parse(messageValidationResponse.body);
+            // apiHandler.callAPIGraph(apiHandler.getMessagesByIdRequest(sender_psid))
+            //    .then(messageValidationResponse => {
+                  let messages = null; //JSON.parse(messageValidationResponse.body);
                   
                   // Se obtiene y valida el tipo de evento
                   if (webhook_event.message) {
-                     handler.handleMessage(sender_psid, webhook_event.message, messages.data[0]);
+                     handler.handleMessage(sender_psid, webhook_event.message, null); // messages.data[0]);
                   }
                   else if (webhook_event.postback) {
-                     handler.handlePostback(sender_psid, webhook_event.postback, messages.data[0]);
+                     handler.handlePostback(sender_psid, webhook_event.postback, null); // messages.data[0]);
                   }
                   else if (webhook_event.request_thread_control) {
                      handler.handleRequestControl(sender_psid);
                   }
-               });
+               //});
          }
       });
 

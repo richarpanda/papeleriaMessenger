@@ -2,17 +2,18 @@
 // Maneja el envio de peticion a los distintos metodos de la API de Facebook.
 // ==================================================================================
 
-// Developer Test Page
-const PAGE_ACCESS_TOKEN = "EAANahtgwPY4BADBQeBfJwaM2IEdmvv2PxfURS0RBEPj1fOcu7WjEQW2yrrCNWpA2d3p5o98RWh2ZAFUDBS23iEta6dVTWszZAp8JixaL3qzTDClJCstxktXdZBs6DkHf6htJ55byTHNcIo6U1HzvC21iGOTJQEFhsU8dZCIiE4qKFX0aKFL84JKzwnadbEoZD"
-// IPEI
-//const PAGE_ACCESS_TOKEN = 'EAANahtgwPY4BADVRe6ATdZCqBewYEZCxzoAXlmdVIxHRm3lf9PZBsHlHMOWEmX5Md7SyZAVkSA5I09rZCZBHEqK7bziGG5CEiyQcSRYowa6aeZBxxI5UblZAQHcjMyen6y9pZCDUd0mFB7DDEGLZAZAaydeaKnVBhtj8lXDlsa86rjmUsZCC1FwB1JrrBQo6HIcbZBxsZD';
+// Papeleria
+//const PAGE_ACCESS_TOKEN = "EAAPQT2F6c90BAFFZBBHCeZCQZBA7rSKCsozIdSRStavjVCfoqSH13oJQ0Pnkh7nSc2fwZCiHtlwl8YTULoYbWGQpxcoVLS40HjVJZAivGgKnt1CH2NNdCZCZCPZCZAeZBHukPZASPeLiLxjrEgQLv9vVYp7E6j0HxjVHhjUZBxXDej9ig2tpIBTiyjRPDdxvSet9dvkZD"
+// TEST
+const PAGE_ACCESS_TOKEN = 'EAAFBPTjoAD4BANjnDTIu0ozGbRed5tpZCOr9GZBZCzsMOqbm1Jl1FMVXSIhjO8zqhY1FG1lkZAaN2x9cTk8CkRESp2ZAhRFZBRYEJW42fZBYJzIWVRQCRgtZBsgSgIO5pIYy5sZAIFVrc4ZCZClCCrZAWymvcjUZCwGipRIzTPeOu1ZCHcTLrSxvQ6mtcbslcT6amdlDUZD';
                               
 const request = require('request');
-const target_app_id = 263902037430900;
+const target_app_id = 353206180249662;
 
 module.exports = {
    // Envia una peticion a la API de messages
    callSendAPI: async function (request_body) {
+     console.log(request_body);
       return new Promise((resolve, reject) => {
          request({
             "uri": "https://graph.facebook.com/v4.0/me/messages",
@@ -120,6 +121,19 @@ module.exports = {
                template_type: "button",
                text: messageText,
                buttons: buttonsConfig
+            }
+         }
+      });
+   },
+
+   // Genera la plantilla para enviar mensaje de tipo boton
+   getGenericTemplate: function (elementsArr) {
+      return JSON.stringify({
+         attachment: {
+            type: "template",
+            payload: {
+               template_type: "generic",
+               elements: elementsArr
             }
          }
       });

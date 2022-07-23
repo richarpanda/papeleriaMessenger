@@ -1,8 +1,8 @@
 // ==================================================================================
 // Obtiene mensajes de prepa en linea
 // ==================================================================================
-const util = require("../../misc/utils");
-const e = require('../../misc/enums');
+const util = require("../misc/utils");
+const e = require('../misc/enums');
 
 module.exports = {
    getMessages: function (payload) {

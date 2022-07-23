@@ -4,15 +4,16 @@
 
 module.exports = {
    getInitialButtons: function () {
-      return [{
+      return [
+      {
          content_type: "text",
-         title: "Prepa en linea",
-         payload: "prepalinea"
+         title: "Si",
+         payload: "siproductos"
       },
       {
          content_type: "text",
-         title: "Universidad en linea",
-         payload: "unilinea"
+         title: "No",
+         payload: "noproductos"
       },
       {
          content_type: "text",

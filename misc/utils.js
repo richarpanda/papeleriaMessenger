@@ -4,9 +4,9 @@
 
 const e = require('../misc/enums');
 const apiHandler = require('../facebookAPIHandler');
-const onlineHighSchoolButtons = require('../buttons/onlineHighSchoolButtons');
-const onlineCollegeButtons = require('../buttons/onlineCollegeButtons');
+const responseButtons = require('../buttons/responseButtons');
 const init = require('../buttons/initButtons');
+const replies = require('../messages/replies');
 
 const sleep = () => {
    return new Promise(function (resolve) {
@@ -31,17 +31,11 @@ module.exports = {
    },
 
    // Envia el siguiente lote de preguntas con respuesta rapída
-   sendNextQuestions: async function (modality, sender_psid, dataConfig, message) {
+   sendNextQuestions: async function (sender_psid, payload, message) {
       let buttons;
 
-      switch (modality) {
-         case e.Modality.HISHSCHOOL:
-            buttons = onlineHighSchoolButtons.getQuestion(dataConfig);
-            break;
-         case e.Modality.COLLEGE:
-            buttons = onlineCollegeButtons.getQuestion(dataConfig);
-            break;
-         case e.Modality.FAQ:
+      switch (payload) {
+         //case e.RepliesPayloads.PRODUCTOSENCONTRADOS:
          default:
             buttons = init.getInitialButtons()
             break;
@@ -51,7 +45,10 @@ module.exports = {
 
       await sleep();
 
-      await apiHandler.callSendAPI(apiHandler.createAPIRequest('message', sender_psid, apiHandler.getQuickReplyTemplate(message, buttons)))
+      await apiHandler.callSendAPI(
+         apiHandler.createAPIRequest('message',
+            sender_psid,
+            apiHandler.getQuickReplyTemplate(message, buttons)))
          .then(res => console.log(res));
    },
 
@@ -63,6 +60,16 @@ module.exports = {
       await sleep();
 
       await apiHandler.callSendAPI(apiHandler.createAPIRequest('message', sender_psid, apiHandler.getButtonTemplate(message, buttons)))
+         .then(res => console.log(res));
+   },
+
+   // Envia el siguiente lote con plantilla generica
+   sendNextGenericResponse: async function (sender_psid, message = null) {
+      await apiHandler.callSendAPI(apiHandler.createAPIRequest('typing_on', sender_psid));
+
+      await sleep();
+
+      await apiHandler.callSendAPI(apiHandler.createAPIRequest('message', sender_psid, apiHandler.getGenericTemplate()))
          .then(res => console.log(res));
    },
 
@@ -104,94 +111,6 @@ module.exports = {
       return message;
    },
 
-   // Obtiene las fechas de inicio, fin y expedicion de certificados con base a la modalidad
-   getDates: function () {
-      const day = new Date().getDay();
-      const month = module.exports.getMonthName(new Date().getMonth() + 1);
-      const endDateDays = 69;
-      let dates = {
-         startDate: null,
-         endDate: null,
-         certificateDate: null,
-         paidDate: null
-      }
-      
-
-      let startDay = 0;
-      if (day == 2)
-         startDay = 6;
-
-      else if (day == 3)
-         startDay = 5;
-
-      else if (day == 4)
-         startDay = 4;
-
-      else if (day == 5)
-         startDay = 3;
-
-      else if (day == 6)
-         startDay = 2;
-
-      const startDate = module.exports.getNextDate(new Date().toDateString(), startDay);
-      const endDate = module.exports.getNextDate(startDate, endDateDays);
-      const certDate = module.exports.getNextDate(new Date().getFullYear() + '-' + endDate.getMonth() + '-' + endDate.getDate(), 80);
-      let monthRangeCert = 0;
-
-      dates.startDate = 'lunes ' + startDate.getDate() + ' de ' + module.exports.getMonthName(startDate.getMonth() + 1);
-      dates.endDate = 'domingo ' + endDate.getDate() + ' de ' + module.exports.getMonthName(endDate.getMonth() + (endDate.getDate() > 25 ? 2 : 1));
-      dates.paidDate = 'viernes ' + module.exports.getNextDate(startDate, 4).getDate() + ' de ' + module.exports.getMonthName(module.exports.getNextDate(startDate, 4).getMonth() + (day > 25 ? 2 : 1));
-
-      if ((certDate.getMonth() + 1) == 11)
-         monthRangeCert = 1;
-      else if ((certDate.getMonth() + 1) == 12)
-         monthRangeCert = 2;
-      else
-         monthRangeCert = certDate.getMonth() + 3;
-
-      dates.certificateDate = module.exports.getMonthName((certDate.getMonth()) + 1) + '/' + module.exports.getMonthName(monthRangeCert);
-      return dates;
-   },
-
-   // Realiza la suma de dias a una fecha determinada
-   getNextDate: function (dateStr, daysSum) {
-      return new Date(new Date(dateStr)
-         .setDate(new Date(dateStr)
-            .getDate() + daysSum));
-   },
-
-   // Obtiene el nombre del mes en base al numero de mes
-   getMonthName: function (month) {
-      switch (month) {
-         case 1:
-         case 13:
-            return 'Enero';
-         case 2:
-         case 14:
-            return 'Febrero';
-         case 3:
-            return 'Marzo';
-         case 4:
-            return 'Abril';
-         case 5:
-            return 'Mayo';
-         case 6:
-            return 'Junio';
-         case 7:
-            return 'Julio';
-         case 8:
-            return 'Agosto';
-         case 9:
-            return 'Septiembre';
-         case 10:
-            return 'Octubre';
-         case 11:
-            return 'Noviembre';
-         case 12:
-            return 'Diciembre';
-      }
-   },
-
    // Convierte a horario local
    convertUtcToLocalTime: function (time) {
       let localTIme;
@@ -205,5 +124,91 @@ module.exports = {
       else localTIme = time - 5;
 
       return localTIme;
+   },
+
+   searchProduct: async function (message, recievedPayload, sender_psid) {
+      var Connection = require('tedious').Connection;
+      var Request = require('tedious').Request;
+
+      var config = {
+         server: 'tokyoserver.database.windows.net',
+         authentication: {
+            type: 'default',
+            options: {
+               userName: 'tokyoAdmin',
+               password: 't0ky04Dm1nP4SS;'
+            }
+         },
+         options: {
+            port: 1433,
+            database: 'tokyoDB'
+         }
+      };
+
+      const connection = new Connection(config);
+
+      connection.connect((err) => {
+         if (err) {
+            console.log('Connection Failed');
+            throw err;
+         }
+         
+         let query = "SELECT * FROM [dbo].[Inventory] WHERE sConcept LIKE '%" + message + "%'";
+         let resultArr = [];
+         let element = null;
+
+         const request = new Request(query, (err, rowCount) => {
+            if (err) {
+               throw err;
+            }
+            connection.close();
+         });
+
+         request.on('row', (columns) => {
+            columns.forEach((column) => {
+               console.log(column.metadata.colName + ":" + column.value);
+               if (column.value !== null) {
+                  if (column.metadata.colName === 'nInventoryId') {
+                     element = {
+                        title: null,
+                        image_url: "https://raw.githubusercontent.com/fbsamples/original-coast-clothing/main/public/styles/male-work.jpg",
+                        subtitle: null,
+                        default_action: {
+                           type: "web_url",
+                           url: "https://www.originalcoastclothing.com/",
+                           webview_height_ratio: "tall",
+                        },
+                        buttons: [{
+                           type: "postback",
+                           title: "Agregar al carrito",
+                           payload: "agregaralcarrito"
+                        }
+                        ]
+                     };
+                  }
+                  else {
+                     if (column.metadata.colName === 'sConcept') {
+                        element.title = column.value;
+                     }
+                     if (column.metadata.colName === 'nPrice') {
+                        element.subtitle = "$" + column.value;
+                     }
+                  }
+               }
+            });
+
+            resultArr.push(element);
+         });
+
+         request.on('doneInProc', (rowCount, more) => {
+            this.sendMessages(replies.getMessages(recievedPayload), sender_psid);
+            apiHandler.callSendAPI(apiHandler.createAPIRequest('message', sender_psid, apiHandler.getGenericTemplate(resultArr)));
+            this.sendNextQuestions(sender_psid, recievedPayload, replies.getNextQuestion(recievedPayload));
+         });
+
+         connection.execSql(request);
+      });
+
+      
    }
 }

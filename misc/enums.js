@@ -2,11 +2,6 @@
 // Enumeradores para control de conversación
 // ==================================================================================
 
-const Modality = {
-   HISHSCHOOL: 'highSchool',
-   COLLEGE: 'college',
-   FAQ: 'faq'
-}
 const Default = {
    SALUDO: 'saludo',
    EMPEZAR: 'Empezar',
@@ -14,58 +9,21 @@ const Default = {
    PREGUNTAS: 'preguntas'
 }
 
-const Messages = {
-   PREPA: 'prepa',
-   COSTOS: 'costos',
-   PAGO: 'pago',
-   EXPEDICION: 'expedicion',
-   SOLOPAGO: 'solopago',
-   DOCUMENTACION: 'documentacion',
-   PAIS: 'pais',
-   PERFIL: 'perfil',
-   VALIDEZ: 'validez',
-   SEP: 'sep',
-   REVALIDACION: 'revalidacion',
-   CERTIFICADOUNI: 'certificadoUni',
-   UNIINSCRIPCION: 'uniInscripcion',
-   REQUISITOS: 'requisitos',
-   CARRERAS: 'carreras',
-   UBICACION: 'ubicacion',
-   HORARIOS: 'horarios',
-   COMPRA: 'compra',
-   SECUNDARIA: 'secundaria',
-   FRAUDE: 'fraude',
-   FECHASINIPREP: 'fechasIniPrep',
-   FECHASINIUNI: 'fechasIniUni',
-   EXTRA: 'extra',
+const faqMessages = {
    TEL: 'telefono'
 }
 
-const HighSchoolSpeechStep = {
-   PRIMERBLOQUE: 'prepalinea',
-   RESPAGOSPEQUEÑOS: 'resPagosPequeños',
-   RESUNAEXHIBICION: 'resUnaExhibicion',
-   SEGUNDOBLOQUE: 'segundoBloque',
-   RESINICIA: 'resInicia',
-   RESNOINICIA: 'resNoInicia'
+const repliesPayloads = {
+   PRODUCTOSENCONTRADOS: 'productosencontrados',
+   PRODUCTOSNOENCONTRADOS: 'productosnoencontrados',
+   SIPRODUCTOS: 'siproductos',
+   NOPRODUCTOS: 'noproductos',
+   AGREGARCARRITO: 'agregaralcarrito',
+   VERCARRITO: 'vercarrito',
 }
 
-const CollegeSpeechStep = {
-   CARRERAS: 'carreras',
-   DERECHO: 'derecho',
-   PSICOLOGIA: 'psicologia',
-   ADMINISTRACION: 'administracion'
-}
-
-const QuestionsPack = {
-   PREPALINEA: 'prepalinea',
-   COMOFUNCIONA: 'comoFunciona',
-   CONOCERCOSTOS: 'conocerCostos',
-   SOBRECERTIFICADO: 'sobreCertificado',
-   FORMASPAGO: 'formasPago',
-   FECHASINGRESO: 'fechasIngreso',
-   REQUISITOSINSCRIPCION: 'requisitosInscripcion',
-   UNILINEA: 'unilinea'
+const questionsPayloads = {
+  
 }
 
 const MediaTypes = {
@@ -92,12 +50,10 @@ const MediaAttachments = {
 }
 
 module.exports = {
-   Modality: Modality,
    Default: Default,
-   Messages: Messages,
-   HighSchoolSpeechStep: HighSchoolSpeechStep,
-   CollegeSpeechStep: CollegeSpeechStep,
-   QuestionsPack: QuestionsPack,
+   FaqMessages: faqMessages,
+   RepliesPayloads: repliesPayloads,
+   QuestionsPayloads: questionsPayloads,
    MediaTypes: MediaTypes,
    MediaAttachments: MediaAttachments
 }
