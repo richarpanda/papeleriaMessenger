@@ -25,6 +25,9 @@ module.exports = {
          case e.Default.SALUDO:
             return "Cuentame ¿Estas interesado en algun producto en especifico?";
           
+         case e.RepliesPayloads.CARRITO:
+            return "Agregue el producto al carrito, ¿deseas buscar algo mas?";
+
          case e.Default.PREGUNTAS:
              return "¿Alguno de los siguientes temas o preguntas frecuentas te ayudan a resolver tu duda? Favor de seleccionarlo.";
 

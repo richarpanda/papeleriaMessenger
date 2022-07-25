@@ -13,10 +13,9 @@ const target_app_id = 353206180249662;
 module.exports = {
    // Envia una peticion a la API de messages
    callSendAPI: async function (request_body) {
-     console.log(request_body);
       return new Promise((resolve, reject) => {
          request({
-            "uri": "https://graph.facebook.com/v4.0/me/messages",
+            "uri": "https://graph.facebook.com/v14.0/me/messages",
             "qs": { "access_token": PAGE_ACCESS_TOKEN },
             "method": "POST",
             "json": request_body
@@ -37,7 +36,7 @@ module.exports = {
    callThreadControlAPI: async function (request_body) {
       return new Promise((resolve, reject) => {
          request({
-            "uri": "https://graph.facebook.com/v2.6/me/pass_thread_control",
+            "uri": "https://graph.facebook.com/v14.0/me/pass_thread_control",
             "qs": { "access_token": PAGE_ACCESS_TOKEN },
             "method": "POST",
             "json": request_body
@@ -58,7 +57,7 @@ module.exports = {
    callAPIGraph: async function (requestStr) {
       return new Promise((resolve, reject) => {
          request({
-            "uri": "https://graph.facebook.com/v8.0/me/" + requestStr,
+            "uri": "https://graph.facebook.com/v14.0/me/" + requestStr,
             "qs": { "access_token": PAGE_ACCESS_TOKEN },
             "method": "GET"
          }, (err, res, body) => {

@@ -10,6 +10,7 @@ const e = require('./misc/enums');
 const replies = require('./messages/replies');
 const defaultMessages = require('./messages/defaultMessages');
 const faq = require('./messages/faqMessages');
+const { RepliesPayloads } = require('./misc/enums');
 
 module.exports = {
    handleRequestControl: async function (sender_psid) {
@@ -22,7 +23,7 @@ module.exports = {
 
       apiHandler.callSendAPI(apiHandler.createAPIRequest('mark_seen', sender_psid));
       apiHandler.callSendAPI(apiHandler.createAPIRequest('typing_on', sender_psid));
-     
+
       if (received_message.text) {
          if (received_message.quick_reply == undefined) {
             let coincidences = dictionary.getConcidences(received_message.text);
@@ -40,12 +41,25 @@ module.exports = {
          }
          else {
             let recievedPayload = received_message.quick_reply.payload;
-            
+
             switch (recievedPayload) {
                case e.RepliesPayloads.SIPRODUCTOS:
                   await util.sendMessages(replies.getMessages(recievedPayload), sender_psid);
                   break;
-              
+
+               case RepliesPayloads.VERCARRITO:
+                  await util.searchOrder(recievedPayload, sender_psid);
+                  break;
+
+               case RepliesPayloads.FINALIZARPEDIDO:
+                  await util.sendMessages(replies.getMessages(recievedPayload), sender_psid);
+
+                  if (util.getOfficeHours() != "true") {
+                     await util.sendMessages([util.getOfficeHours()], sender_psid);
+                  }
+
+                  await apiHandler.callThreadControlAPI(apiHandler.createAPIRequest('threadControl', sender_psid));
+                  break;
 
                case e.Default.ASESOR:
                case e.RepliesPayloads.NOPRODUCTOS:
@@ -57,9 +71,9 @@ module.exports = {
 
                   await apiHandler.callThreadControlAPI(apiHandler.createAPIRequest('threadControl', sender_psid));
                   break;
-              default:
-                  
-                break;
+               default:
+
+                  break;
             }
          }
       }
@@ -67,14 +81,38 @@ module.exports = {
 
    handlePostback: async function (sender_psid, received_postback, messageData) {
       let recievedPayload = received_postback.payload;
-     
+      let productId = null;
+
       apiHandler.callSendAPI(apiHandler.createAPIRequest('mark_seen', sender_psid));
       apiHandler.callSendAPI(apiHandler.createAPIRequest('typing_on', sender_psid));
 
+      if (recievedPayload.substring(0, 7) === "carrito") {
+         productId = recievedPayload.split("_")[1];
+         recievedPayload = "carrito";
+      }
+
       switch (recievedPayload) {
+         case RepliesPayloads.CARRITO:
+            await util.createOrder(sender_psid, productId);
+            await util.sendNextQuestions(sender_psid, recievedPayload, defaultMessages.getNextQuestion(recievedPayload));
+            break;
          case e.Default.EMPEZAR:
             await util.sendMessages(defaultMessages.getMessages(recievedPayload), sender_psid);
             await util.sendNextQuestions(sender_psid, recievedPayload, defaultMessages.getNextQuestion(recievedPayload));
+            break;
+          
+          case RepliesPayloads.VERCARRITO:
+            await util.searchOrder(recievedPayload, sender_psid);
+            break;
+
+          case RepliesPayloads.FINALIZARPEDIDO:
+            await util.sendMessages(replies.getMessages(recievedPayload), sender_psid);
+
+            if (util.getOfficeHours() != "true") {
+               await util.sendMessages([util.getOfficeHours()], sender_psid);
+            }
+
+            await apiHandler.callThreadControlAPI(apiHandler.createAPIRequest('threadControl', sender_psid));
             break;
 
          case e.Default.ASESOR:

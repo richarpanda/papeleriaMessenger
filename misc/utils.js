@@ -7,6 +7,7 @@ const apiHandler = require('../facebookAPIHandler');
 const responseButtons = require('../buttons/responseButtons');
 const init = require('../buttons/initButtons');
 const replies = require('../messages/replies');
+const { RepliesPayloads } = require('../misc/enums');
 
 const sleep = () => {
    return new Promise(function (resolve) {
@@ -17,6 +18,7 @@ const sleep = () => {
 module.exports = {
    // Envia un lote de mensajes seguidos
    sendMessages: async function (messagesArr, sender_psid) {
+      console.log(messagesArr);
       for await (let msg of messagesArr) {
          let response = null;
          response = { "text": msg }
@@ -35,9 +37,15 @@ module.exports = {
       let buttons;
 
       switch (payload) {
-         //case e.RepliesPayloads.PRODUCTOSENCONTRADOS:
+         case e.RepliesPayloads.PRODUCTOSNOENCONTRADOS:
+            buttons = init.getAsesorButton();
+            break;
+         case e.RepliesPayloads.CARRITO:
+         case e.RepliesPayloads.VERCARRITO:
+            buttons = init.getCarritoButtons();
+            break;
          default:
-            buttons = init.getInitialButtons()
+            buttons = init.getInitialButtons();
             break;
       }
 
@@ -126,6 +134,93 @@ module.exports = {
       return localTIme;
    },
 
+   // Genera una orden de compra
+   createOrder: async function (sender_psid, productId) {
+      this.executeNonQuery(`INSERT INTO [dbo].[Orders] ([nInventoryId],[dOrderDate],[nUserId]) VALUES (${productId},GETDATE(),'${sender_psid}')`);
+   },
+
+   // Agrega direccion a la orden
+   addOrderAddress: async function (sender_psid, address) {
+      this.executeNonQuery(`
+         INSERT INTO [dbo].[OrderDetail] ([nOrderId],[sAddressId])
+         SELECT nOrderId, '${address}' FROM [dbo].[Orders] WHERE nUserId = '${sender_psid}' AND CAST(dOrderDate AS DATE) = CAST(GETDATE() AS DATE)`);
+   },
+
+   // Regresa los productos agregados al carrito
+   searchOrder: async function (recievedPayload, sender_psid) {
+      console.log(123);
+      var Connection = require('tedious').Connection;
+      var Request = require('tedious').Request;
+
+      var config = {
+         server: 'tokyoserver.database.windows.net',
+         authentication: {
+            type: 'default',
+            options: {
+               userName: 'tokyoAdmin',
+               password: 't0ky04Dm1nP4SS;'
+            }
+         },
+         options: {
+            port: 1433,
+            database: 'tokyoDB'
+         }
+      };
+
+      const connection = new Connection(config);
+
+      connection.connect((err) => {
+         if (err) {
+            console.log('Connection Failed');
+            throw err;
+         }
+         
+         let query = 
+            `SELECT nOrderId, inv.sConcept
+            FROM [dbo].[Orders] ord
+            INNER JOIN [dbo].[Inventory] inv ON ord.nInventoryId = inv.nInventoryId
+            WHERE nUserId = '${sender_psid}' AND CAST(dOrderDate AS DATE) = CAST(GETDATE() AS DATE)`
+         ;
+
+         let resultArr = [];
+         let element = null;
+
+         const request = new Request(query, (err, rowCount) => {
+            if (err) {
+               throw err;
+            }
+            connection.close();
+         });
+
+         request.on('row', (columns) => {
+            columns.forEach((column) => {
+               console.log(column.metadata.colName + ":" + column.value);
+               if (column.metadata.colName === 'sConcept') {
+                  resultArr.push(column.value);
+               }
+            });
+         });
+
+         request.on('doneInProc', async (rowCount, more) => {
+            if (resultArr.length > 0) {
+               console.log(recievedPayload);
+               console.log(resultArr);
+               await this.sendMessages(replies.getMessages(recievedPayload), sender_psid);
+               await this.sendMessages(resultArr, sender_psid);
+               await this.sendNextQuestions(sender_psid, recievedPayload, replies.getNextQuestion(recievedPayload));
+            }
+            else {
+               await this.sendMessages(replies.getMessages(RepliesPayloads.PEDIDOVACIO), sender_psid);
+               await this.sendNextQuestions(sender_psid,e.Default.EMPEZAR, replies.getNextQuestion(e.Default.EMPEZAR));
+            }
+
+         });
+
+         connection.execSql(request);
+      });     
+   },
+
+   // Busca un producto
    searchProduct: async function (message, recievedPayload, sender_psid) {
       var Connection = require('tedious').Connection;
       var Request = require('tedious').Request;
@@ -171,19 +266,13 @@ module.exports = {
                   if (column.metadata.colName === 'nInventoryId') {
                      element = {
                         title: null,
-                        image_url: "https://raw.githubusercontent.com/fbsamples/original-coast-clothing/main/public/styles/male-work.jpg",
+                        image_url: "https://scontent.fmex28-1.fna.fbcdn.net/v/t39.30808-6/286714343_127795616590000_8616241801724929432_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=09cbfe&_nc_eui2=AeEH7Mv8QFXjVfqc1Bh8tHaomQiPZrUkZJqZCI9mtSRkmvMwEAMh6KJmQYJ-iPy95aU&_nc_ohc=sQaPpXMng-QAX_nJ9h4&_nc_ht=scontent.fmex28-1.fna&oh=00_AT8ppKGojlfO82uTwl-CT3g6j2QAv7Sr-jBijeV-JzZ7nA&oe=62BA6A44",
                         subtitle: null,
-                        default_action: {
-                           type: "web_url",
-                           url: "https://www.originalcoastclothing.com/",
-                           webview_height_ratio: "tall",
-                        },
                         buttons: [{
                            type: "postback",
                            title: "Agregar al carrito",
-                           payload: "agregaralcarrito"
-                        }
-                        ]
+                           payload: 'carrito_' + column.value
+                        }]
                      };
                   }
                   else {
@@ -200,15 +289,73 @@ module.exports = {
             resultArr.push(element);
          });
 
-         request.on('doneInProc', (rowCount, more) => {
-            this.sendMessages(replies.getMessages(recievedPayload), sender_psid);
-            apiHandler.callSendAPI(apiHandler.createAPIRequest('message', sender_psid, apiHandler.getGenericTemplate(resultArr)));
-            this.sendNextQuestions(sender_psid, recievedPayload, replies.getNextQuestion(recievedPayload));
+         request.on('doneInProc', async (rowCount, more) => {
+            await this.sendMessages(replies.getMessages(recievedPayload), sender_psid);
+            let finalArr = chunkArray(resultArr);
+            
+            for (let i = 0; i < finalArr.length; i ++)
+              await apiHandler.callSendAPI(apiHandler.createAPIRequest('message', sender_psid, apiHandler.getGenericTemplate(finalArr[i])));
+         
+            if (finalArr.length > 0)
+               await this.sendNextQuestions(sender_psid, recievedPayload, replies.getNextQuestion(recievedPayload));
+            else
+               await this.sendNextQuestions(sender_psid, RepliesPayloads.PRODUCTOSNOENCONTRADOS, replies.getNextQuestion(RepliesPayloads.PRODUCTOSNOENCONTRADOS));
+         });
+        
+        function chunkArray(array) {
+           let resultArr = [];
+           const chunkSize = 5;
+           for (let i = 0; i < array.length; i += chunkSize) {
+              const chunk = array.slice(i, i + chunkSize);
+              resultArr.push(chunk);
+           }
+
+           return resultArr;
+        }
+
+         connection.execSql(request);
+      });     
+   },
+
+   executeNonQuery: async function (queryStmt) {
+      var Connection = require('tedious').Connection;
+      var Request = require('tedious').Request;
+
+      var config = {
+         server: 'tokyoserver.database.windows.net',
+         authentication: {
+            type: 'default',
+            options: {
+               userName: 'tokyoAdmin',
+               password: 't0ky04Dm1nP4SS;'
+            }
+         },
+         options: {
+            port: 1433,
+            database: 'tokyoDB'
+         }
+      };
+
+      const connection = new Connection(config);
+
+      connection.connect((err) => {
+         if (err) {
+            console.log('Connection Failed');
+            throw err;
+         }
+
+         const request = new Request(queryStmt, (err, rowCount) => {
+            if (err) {
+               throw err;
+            }
+            connection.close();
+         });
+
+         request.on('doneInProc', async (rowCount, more) => {
+            console.log('Query executed with no errors');
          });
 
          connection.execSql(request);
       });
-
-      
-   }
+   },
 }
