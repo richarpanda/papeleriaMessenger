@@ -266,7 +266,7 @@ module.exports = {
                   if (column.metadata.colName === 'nInventoryId') {
                      element = {
                         title: null,
-                        image_url: "https://scontent.fmex28-1.fna.fbcdn.net/v/t39.30808-6/286714343_127795616590000_8616241801724929432_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=09cbfe&_nc_eui2=AeEH7Mv8QFXjVfqc1Bh8tHaomQiPZrUkZJqZCI9mtSRkmvMwEAMh6KJmQYJ-iPy95aU&_nc_ohc=sQaPpXMng-QAX_nJ9h4&_nc_ht=scontent.fmex28-1.fna&oh=00_AT8ppKGojlfO82uTwl-CT3g6j2QAv7Sr-jBijeV-JzZ7nA&oe=62BA6A44",
+                        image_url: "https://cdn.glitch.global/d53d8ec1-7812-45fc-b6b4-ed973732bbdd/286714343_127795616590000_8616241801724929432_n.jpg?v=1658726864309",
                         subtitle: null,
                         buttons: [{
                            type: "postback",
